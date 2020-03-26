@@ -35,14 +35,30 @@ NOTE: `dispose` method will be called automatically when the Jitsi Meet iframe u
 The screen sharing utility requires iframe HTML Element that will load Jitsi Meet.
 
 **Enable the screen sharing:**
+
+In the **render** electron process of the window where Jitsi Meet is displayed:
+
 ```Javascript
 const {
-    setupScreenSharingForWindow
+    setupScreenSharingRender
 } = require("jitsi-meet-electron-utils");
 
-// iframe - the Jitsi Meet iframe
-setupScreenSharingForWindow(iframe);
+// api - The Jitsi Meet iframe api object.
+setupScreenSharingRender(api);
 ```
+In the **main** electron process:
+
+```Javascript
+const {
+    setupScreenSharingMain
+} = require("jitsi-meet-electron-utils");
+
+// jitsiMeetWindow - The BrowserWindow instance of the window where Jitsi Meet is loaded.
+// appName - Application name which will be displayed inside the content sharing tracking window
+// i.e. [appName] is sharing your screen.
+setupScreenSharingMain(mainWindow, appName);
+```
+
 
 #### Always On Top
 Displays a small window with the current active speaker video when the main Jitsi Meet window is not focused.
@@ -79,6 +95,8 @@ alwaysOnTop.on('will-close', handleAlwaysOnTopClose);
 ```
 
 `setupAlwaysOnTopRender` return an instance of EventEmitter with the following events:
+
+* _dismissed_ - emitted when the always on top window is explicitly dismissed via its close button
 
 * _will-close_ - emitted right before the always on top window is going to close
 
