@@ -9,19 +9,27 @@ const {
 
 let browserWindow;
 
-/**
- * Attaches listening to all events from POWER_MONITOR_EVENTS on powerMonitor.
- * @param {BrowserWindow} jitsiMeetWindow - the BrowserWindow object which
- * displays Jitsi Meet.
- * @private
- */
 function _attachEvents(jitsiMeetWindow) {
     browserWindow = jitsiMeetWindow;
-    Object.values(POWER_MONITOR_EVENTS).forEach(event => {
-        electron.powerMonitor.on(event, () => {
-            jitsiMeetWindow.webContents.send(POWER_MONITOR_EVENTS_CHANNEL, { event });
-        });
-    });
+    let wc = jitsiMeetWindow.webContents;
+    wc.once('destroyed', __detach);
+    electron.powerMonitor.on('shutdown', power_on_shutdown);
+    electron.powerMonitor.on('resume', power_on_resume);
+    electron.powerMonitor.on('suspend', power_on_suspend);
+    electron.powerMonitor.on('lock-screen', power_on_lock);
+    electron.powerMonitor.on('unlock-screen', power_on_unlock);
+    function power_on_shutdown() {wc.send(POWER_MONITOR_EVENTS_CHANNEL, {event:'shutdown'});}
+    function power_on_resume() {wc.send(POWER_MONITOR_EVENTS_CHANNEL, {event:'resume'});}
+    function power_on_suspend() {wc.send(POWER_MONITOR_EVENTS_CHANNEL, {event:'suspend'});}
+    function power_on_lock() {wc.send(POWER_MONITOR_EVENTS_CHANNEL, {event:'lock-screen'});}
+    function power_on_unlock() {wc.send(POWER_MONITOR_EVENTS_CHANNEL, {event:'unlock-screen'});}
+    function __detach() {
+        electron.powerMonitor.off('shutdown', power_on_shutdown);
+        electron.powerMonitor.off('resume', power_on_resume);
+        electron.powerMonitor.off('suspend', power_on_suspend);
+        electron.powerMonitor.off('lock-screen', power_on_lock);
+        electron.powerMonitor.off('unlock-screen', power_on_unlock);
+    }
 }
 
 /**

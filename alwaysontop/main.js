@@ -1,6 +1,11 @@
 const os = require('os');
 const electron = require('electron');
 const robot = require("robotjs");
+function mouse_get_pos() {
+    return robot.getMousePos();
+    // return {x:0,y:0};
+}
+
 const { BrowserWindow, ipcMain } = electron;
 const { SIZE } = require('./constants');
 
@@ -51,7 +56,12 @@ function onAlwaysOnTopWindow(
         event.preventDefault();
         const win = event.newGuest = new BrowserWindow(
             Object.assign(options, {
-                backgroundColor: 'transparent',
+                frame: false,
+                // vibrancy: "dark",
+                // title: 'conf-float',
+                // titleBarStyle: "hiddenInset", //"customButtonsOnHover", //
+                transparent: true,
+                backgroundColor: '#00000000',
                 minWidth: SIZE.width,
                 minHeight: SIZE.height,
                 minimizable: false,
@@ -60,11 +70,12 @@ function onAlwaysOnTopWindow(
                 alwaysOnTop: true,
                 fullscreen: false,
                 fullscreenable: false,
+                opacity: .6,
                 skipTaskbar: true,
                 titleBarStyle: undefined,
-                frame: false,
                 show: false,
                 webPreferences: {
+                    backgroundThrottling: true,
                     contextIsolation: false
                 }
             }, getPosition(), getSize())
@@ -84,7 +95,7 @@ function onAlwaysOnTopWindow(
             }
         });
 
-        setAspectRatioToResizeableWindow(win, ASPECT_RATIO);
+        // setAspectRatioToResizeableWindow(win, ASPECT_RATIO);
 
         jitsiMeetWindow.webContents.send('jitsi-always-on-top', {
             type: 'event',
@@ -211,7 +222,7 @@ function setAspectRatioToResizeableWindow(win, aspectRatio) {
     } else {
         win.on('will-resize', (e, newBounds) => {
             oldSize = win.getSize();
-            const mousePos = robot.getMousePos();
+            const mousePos = mouse_get_pos();
             const windowBottomRightPos = {
                 x: newBounds.x + newBounds.width - 16,
                 y: newBounds.y + newBounds.height - 16,

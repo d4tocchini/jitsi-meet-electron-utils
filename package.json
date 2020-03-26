@@ -7,7 +7,8 @@
     "lint": "eslint .",
     "test": "TESTING=true mocha",
     "validate": "npm ls",
-    "install": "prebuild-install || node-gyp rebuild"
+    "build-node": "prebuild-install || node-gyp rebuild",
+    "build-electron": "HOME=~/.electron-gyp node-gyp rebuild  --target=7.0.0 --arch=x64 --dist-url=https://electronjs.org/headers"
   },
   "pre-commit": [
     "lint"
@@ -24,14 +25,15 @@
   "author": "",
   "readmeFilename": "README.md",
   "license": "Apache-2.0",
-  "gypfile": true,
+  "gypfile": false,
   "dependencies": {
-    "nan": "^2.14.0",
+  },
+  "_dependencies": {
     "postis": "^2.2.0",
-    "prebuild-install": "^5.3.0",
+    "prebuild-install": "^5.3.2",
     "robotjs": "jitsi/robotjs#jitsi-electron6"
   },
-  "devDependencies": {
+  "_devDependencies": {
     "eslint": ">=3",
     "eslint-plugin-jsdoc": "*",
     "mocha": "^4.0.1",

@@ -26,7 +26,7 @@ function initPopupsConfiguration(jitsiMeetWindow) {
         if (testMatchPatterns(url, frameName, configGoogle.matchPatterns)) {
             event.preventDefault();
             event.newGuest = new BrowserWindow(Object.assign(options, {
-                titleBarStyle: undefined,
+                // titleBarStyle: undefined,
                 webPreferences: {
                     contextIsolation: false,
                     nodeIntegration: false,
@@ -42,7 +42,7 @@ function initPopupsConfiguration(jitsiMeetWindow) {
             event.preventDefault();
             const win
                 = event.newGuest = new BrowserWindow(Object.assign(options, {
-                    titleBarStyle: undefined,
+                    // titleBarStyle: undefined,
                     webPreferences: {
                         nodeIntegration: false,
                         webSecurity: false,

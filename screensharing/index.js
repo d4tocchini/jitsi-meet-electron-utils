@@ -2,7 +2,9 @@ const electron = require("electron");
 module.exports = function setupScreenSharingForWindow(iframe) {
     // make sure that even after reload/redirect the screensharing will be
     // available
+
     iframe.addEventListener('load', () => {
+
         iframe.contentWindow.JitsiMeetElectron = {
             /**
              * Get sources available for screensharing. The callback is invoked
@@ -19,17 +21,29 @@ module.exports = function setupScreenSharingForWindow(iframe) {
              * default electron will return images with height and width of
              * 150px.
              */
-            obtainDesktopStreams(callback, errorCallback, options = {}) {
-                electron.desktopCapturer.getSources(options,
-                    (error, sources) => {
-                        if (error) {
-                            errorCallback(error);
-                            return;
-                        }
+            async obtainDesktopStreams(callback, errorCallback, options = {})
+            {
+                try {
+                    const sources = await electron
+                        .desktopCapturer.getSources(options);
+                    callback(sources);
+                 }
+                 catch(e) {
+                     console.error(e)
+                    errorCallback(e);
+                 }
+                    // (error, sources) => {
+                    //     debugger
+                    //     if (error) {
+                    //         errorCallback(error);
+                    //         return;
+                    //     }
 
-                        callback(sources);
-                    });
+                    //     callback(sources);
+                    // });
             }
         };
     });
 };
+
+

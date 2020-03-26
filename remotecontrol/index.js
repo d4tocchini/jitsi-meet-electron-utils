@@ -3,7 +3,10 @@ const { remote } = electron;
 const os = require('os');
 const postis = require("postis");
 const robot = require("robotjs");
-const sourceId2Coordinates = require("../node_addons/sourceId2Coordinates");
+// D4
+// const sourceId2Coordinates = require("../node_addons/sourceId2Coordinates");
+
+
 const constants = require("./constants");
 const {
     EVENTS,
@@ -81,7 +84,7 @@ class RemoteControl {
             default: { // > 1 display
                 // Remove the type part from the sourceId
                 const parsedSourceId = sourceId.replace('screen:', '');
-                const coordinates = sourceId2Coordinates(parsedSourceId);
+                const coordinates = robot.sourceId2Coordinates(parsedSourceId);
                 if(coordinates) {
                     // Currently sourceId2Coordinates will return undefined for
                     // any OS except Windows. This code will be executed only on

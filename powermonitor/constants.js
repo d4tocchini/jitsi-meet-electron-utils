@@ -18,13 +18,13 @@ const METHODS = {
  *  UNLOCK_SCREEN: string}}
  */
 const POWER_MONITOR_EVENTS = {
-    LOCK_SCREEN: 'lock-screen' ,
-    ON_AC: 'on-ac',
-    ON_BATTERY: 'on-battery',
+    ON_AC: 'on-ac', // win only
+    ON_BATTERY: 'on-battery', // win only
     RESUME: 'resume',
-    SHUTDOWN: 'shutdown',
+    SHUTDOWN: 'shutdown', // mac / linux
     SUSPEND: 'suspend',
-    UNLOCK_SCREEN: 'unlock-screen'
+    LOCK_SCREEN: 'lock-screen' , // mac / win
+    UNLOCK_SCREEN: 'unlock-screen'  // mac / win
 };
 
 /**

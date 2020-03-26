@@ -1,3 +1,4 @@
+
 /* global __dirname */
 const { ipcRenderer, remote } = require('electron');
 
@@ -6,6 +7,9 @@ const os = require('os');
 const path = require('path');
 
 const { ALWAYSONTOP_WILL_CLOSE, SIZE } = require('./constants');
+
+let _jitsiMeetElectronWindow;
+let _alwaysOnTopBrowserWindow;
 
 /**
  * Returieves and trying to parse a numeric value from the local storage.
@@ -44,6 +48,7 @@ class AlwaysOnTop extends EventEmitter {
      */
     constructor(api) {
         super();
+        _jitsiMeetElectronWindow = remote.getCurrentWindow();
         this._updateLargeVideoSrc = this._updateLargeVideoSrc.bind(this);
         this._openAlwaysOnTopWindow = this._openAlwaysOnTopWindow.bind(this);
         this._closeAlwaysOnTopWindow = this._closeAlwaysOnTopWindow.bind(this);
@@ -53,7 +58,6 @@ class AlwaysOnTop extends EventEmitter {
         this._onIntersection = this._onIntersection.bind(this);
 
         this._api = api;
-        this._jitsiMeetElectronWindow = remote.getCurrentWindow();
         this._intersectionObserver = new IntersectionObserver(this._onIntersection);
 
         if (!api) {
@@ -166,10 +170,17 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _onConferenceJoined() {
-        this._jitsiMeetElectronWindow.on('blur', this._openAlwaysOnTopWindow);
-        this._jitsiMeetElectronWindow.on('focus', this._closeAlwaysOnTopWindow);
-        this._jitsiMeetElectronWindow.on('close', this._closeAlwaysOnTopWindow);
+        try {
+        if (!_jitsiMeetElectronWindow || _jitsiMeetElectronWindow.isDestroyed())
+            return
+        _jitsiMeetElectronWindow.on('blur', this._openAlwaysOnTopWindow);
+        _jitsiMeetElectronWindow.on('focus', this._closeAlwaysOnTopWindow);
+        _jitsiMeetElectronWindow.once('close', this._closeAlwaysOnTopWindow);
         this._intersectionObserver.observe(this._api.getIFrame());
+        }
+        catch(e) {
+            console.error(e)
+        }
     }
 
     /**
@@ -178,16 +189,18 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _onConferenceLeft() {
+        if (!_jitsiMeetElectronWindow || _jitsiMeetElectronWindow.isDestroyed())
+            return
         this._intersectionObserver.unobserve(this._api.getIFrame());
-        this._jitsiMeetElectronWindow.removeListener(
+        _jitsiMeetElectronWindow.removeListener(
             'blur',
             this._openAlwaysOnTopWindow
         );
-        this._jitsiMeetElectronWindow.removeListener(
+        _jitsiMeetElectronWindow.removeListener(
             'focus',
             this._closeAlwaysOnTopWindow
         );
-        this._jitsiMeetElectronWindow.removeListener(
+        _jitsiMeetElectronWindow.removeListener(
             'close',
             this._closeAlwaysOnTopWindow
         );
@@ -203,14 +216,16 @@ class AlwaysOnTop extends EventEmitter {
      */
     _onIntersection(entries) {
         const singleEntry = entries.pop();
-        this._jitsiMeetElectronWindow.removeListener(
+        if (!_jitsiMeetElectronWindow || _jitsiMeetElectronWindow.isDestroyed())
+            return
+        _jitsiMeetElectronWindow.removeListener(
             'focus',
             this._closeAlwaysOnTopWindow
         );
 
         if (singleEntry.isIntersecting) {
             this._closeAlwaysOnTopWindow();
-            this._jitsiMeetElectronWindow.on(
+            _jitsiMeetElectronWindow.on(
                 'focus',
                 this._closeAlwaysOnTopWindow
             );
@@ -239,8 +254,8 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _onNewAlwaysOnTopBrowserWindow(windowId) {
-        this._alwaysOnTopBrowserWindow = remote.BrowserWindow.fromId(windowId);
-        const { webContents } = this._alwaysOnTopBrowserWindow;
+        _alwaysOnTopBrowserWindow = remote.BrowserWindow.fromId(windowId);
+        const { webContents } = _alwaysOnTopBrowserWindow;
         // if the window is still loading we may end up loosing the injected content when load finishes. We need to wait
         // for the loading to be completed. We are using the browser windows events instead of the DOM window ones because
         // it appears they are unreliable (readyState is always completed, most of the events are not fired!!!)
@@ -271,8 +286,10 @@ class AlwaysOnTop extends EventEmitter {
                 );
             },
             ondblclick: () => {
+                if (_jitsiMeetElectronWindow &&!_jitsiMeetElectronWindow.isDestroyed())
+                    _jitsiMeetElectronWindow.show();
                 this._closeAlwaysOnTopWindow();
-                this._jitsiMeetElectronWindow.show();
+
             },
             /**
              * On Windows and Linux if we use the standard drag
@@ -289,8 +306,8 @@ class AlwaysOnTop extends EventEmitter {
              * @param y
              */
             move: (x, y, initialSize) => {
-                if (this._alwaysOnTopBrowserWindow) {
-                    this._alwaysOnTopBrowserWindow.setBounds({
+                if (_alwaysOnTopBrowserWindow && !_alwaysOnTopBrowserWindow.isDestroyed()) {
+                    _alwaysOnTopBrowserWindow.setBounds({
                         x,
                         y,
                         width: initialSize.width,
@@ -303,8 +320,8 @@ class AlwaysOnTop extends EventEmitter {
              * @returns {{width: number, height: number}}
              */
             getCurrentSize: () => {
-                if (this._alwaysOnTopBrowserWindow) {
-                    const [width, height] = this._alwaysOnTopBrowserWindow.getSize();
+                if (_alwaysOnTopBrowserWindow && !_alwaysOnTopBrowserWindow.isDestroyed()) {
+                    const [width, height] = _alwaysOnTopBrowserWindow.getSize();
                     return { width, height };
                 }
 
@@ -337,9 +354,18 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _openAlwaysOnTopWindow() {
+        try {
         if (this._alwaysOnTopWindow) {
             return;
         }
+
+
+
+        // TODO: !?!?!?!?!?!?!?!!?!?
+        // if (_jitsiMeetElectronWindow && !_jitsiMeetElectronWindow.isDestroyed()){
+        //     _jitsiMeetElectronWindow.hide();
+        // }
+
         ipcRenderer.on('jitsi-always-on-top', this._onMessageReceived);
         this._api.on('largeVideoChanged', this._updateLargeVideoSrc);
 
@@ -347,6 +373,10 @@ class AlwaysOnTop extends EventEmitter {
         // cross-origin redirect can cause any set global variables to be blown
         // away.
         this._alwaysOnTopWindow = window.open('', 'AlwaysOnTop');
+        }
+        catch (e) {
+            console.error(e)
+        }
     }
 
     /**
@@ -355,9 +385,11 @@ class AlwaysOnTop extends EventEmitter {
      * @returns {void}
      */
     _closeAlwaysOnTopWindow() {
-        if (this._alwaysOnTopBrowserWindow && !this._alwaysOnTopBrowserWindow.isDestroyed()) {
-            const position =
-                this._alwaysOnTopBrowserWindow.getPosition();
+        try {
+
+
+        if (_alwaysOnTopBrowserWindow && !_alwaysOnTopBrowserWindow.isDestroyed()) {
+            const position = _alwaysOnTopBrowserWindow.getPosition();
 
             this._position = {
                 x: position[0],
@@ -365,22 +397,30 @@ class AlwaysOnTop extends EventEmitter {
             };
         }
 
-        if (this._alwaysOnTopWindow) {
+        if (this._alwaysOnTopWindow
+            // && this._alwaysOnTopWindow.isDestroyed()
+        ) {
             // we need to check the BrowserWindow reference here because
             // window.closed is not reliable due to Electron quirkiness
-            if(this._alwaysOnTopBrowserWindow && !this._alwaysOnTopBrowserWindow.isDestroyed()) {
+            if(_alwaysOnTopBrowserWindow && !_alwaysOnTopBrowserWindow.isDestroyed()) {
                 this._alwaysOnTopWindow.close();
             }
 
             ipcRenderer.removeListener('jitsi-always-on-top', this._onMessageReceived);
         }
-
+        if (_jitsiMeetElectronWindow && !_jitsiMeetElectronWindow.isDestroyed()) {
+            _jitsiMeetElectronWindow.show();
+        }
+        }
+        catch (e){
+            console.error(e)
+        }
         //we need to tell the main process to close the BrowserWindow because when
         //open and close AOT are called in quick succession, the reference to the new BrowserWindow
         //instantiated on main process is set to undefined, thus we lose control over it
         ipcRenderer.send('jitsi-always-on-top-should-close');
 
-        this._alwaysOnTopBrowserWindow = undefined;
+        _alwaysOnTopBrowserWindow = undefined;
         this._alwaysOnTopWindow = undefined;
     }
 
