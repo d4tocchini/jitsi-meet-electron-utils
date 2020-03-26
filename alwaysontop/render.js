@@ -6,7 +6,7 @@ const { EventEmitter } = require('events');
 const os = require('os');
 const path = require('path');
 
-const { ALWAYSONTOP_WILL_CLOSE, SIZE } = require('./constants');
+const { ALWAYSONTOP_DISMISSED, ALWAYSONTOP_WILL_CLOSE, SIZE } = require('./constants');
 
 let _jitsiMeetElectronWindow;
 let _alwaysOnTopBrowserWindow;
@@ -56,6 +56,7 @@ class AlwaysOnTop extends EventEmitter {
         this._onConferenceJoined = this._onConferenceJoined.bind(this);
         this._onConferenceLeft = this._onConferenceLeft.bind(this);
         this._onIntersection = this._onIntersection.bind(this);
+        this._dismiss = this._dismiss.bind(this);
 
         this._api = api;
         this._intersectionObserver = new IntersectionObserver(this._onIntersection);
@@ -265,6 +266,15 @@ class AlwaysOnTop extends EventEmitter {
             this._setupAlwaysOnTopWindow();
         }
     }
+    /**
+     * Dismisses always on top window.
+     *
+     * @returns {void}
+     */
+    _dismiss() {
+        this.emit(ALWAYSONTOP_DISMISSED);
+        this._closeAlwaysOnTopWindow();
+    }
 
     /**
      * Sets all necessary content (HTML, CSS, JS) to the always on top window.
@@ -277,6 +287,7 @@ class AlwaysOnTop extends EventEmitter {
         }
         this._alwaysOnTopWindow.alwaysOnTop = {
             api: this._api,
+            dismiss: this._dismiss,
             onload: this._updateLargeVideoSrc,
             onbeforeunload: () => {
                 this.emit(ALWAYSONTOP_WILL_CLOSE);
@@ -336,6 +347,7 @@ class AlwaysOnTop extends EventEmitter {
             this._alwaysOnTopWindow.document.body.innerHTML = `
               <div id="react"></div>
               <video autoplay="" id="video" style="transform: none;" muted></video>
+              <div class="dismiss"></div>
               <link rel="stylesheet" href="file://${ cssPath }">
             `;
 
