@@ -89,6 +89,8 @@ module.exports = function setupPowerMonitorRender(api) {
             scope: 'jitsi-power-monitor'
         });
         _channel.ready(() => {
+            ipcRenderer.on(POWER_MONITOR_QUERIES_CHANNEL, queriesChannelListener);
+            ipcRenderer.on(POWER_MONITOR_EVENTS_CHANNEL, eventsChannelListener);
             _channel.listen('message', message => {
                 const { name } = message.data;
                 if(name === POWER_MONITOR_MESSAGE_NAME) {
@@ -96,8 +98,5 @@ module.exports = function setupPowerMonitorRender(api) {
                 }
             });
         });
-    });
-
-    ipcRenderer.on(POWER_MONITOR_QUERIES_CHANNEL, queriesChannelListener);
-    ipcRenderer.on(POWER_MONITOR_EVENTS_CHANNEL, eventsChannelListener);
+    });    
 };
